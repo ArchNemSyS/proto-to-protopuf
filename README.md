@@ -1,5 +1,5 @@
 # proto-to-protopuf
-A parser for Google proto source files to native compatible protopuf C++ headers 
+A parser for Google proto source files to native compatible [protopuf](https://github.com/PragmaTwice/protopuf) C++ headers 
 
 ## limitations
 - only supports proto version 2 files - (should be relative easy to overload)
