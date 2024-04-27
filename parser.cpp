@@ -5,13 +5,13 @@
 
 
 Parser::Parser(){}
-void Parser::rewrite_comment(std::vector<std::string_view>::iterator &it)
+void Parser::rewrite_comment()
 {
     m_output.append(*it);
     m_output.append("\n");
 }
 
-void Parser::rewrite_include(std::vector<std::string_view>::iterator &it)
+void Parser::rewrite_include()
 {
 /*
 import "filename.proto";
@@ -28,7 +28,7 @@ include "filename.proto.h"
 
 }
 
-void Parser::rewrite_enum(std::vector<std::string_view>::iterator &it)
+void Parser::rewrite_enum()
 {
     /*
     enum TYPE {
@@ -48,6 +48,7 @@ void Parser::rewrite_enum(std::vector<std::string_view>::iterator &it)
     m_output.append("enum ");   // enum
     std::advance(it,1);         // TYPE
     m_output.append(*it);
+    m_enums.push_back(*it);
 
     m_output.append("{ \n\t");    // {
     std::advance(it,2);
@@ -87,9 +88,79 @@ void Parser::rewrite_enum(std::vector<std::string_view>::iterator &it)
 
 }
 
+void Parser::rewrite_message_field()
+{
+    /*
+    |   0     |   1   |   2     | 3 | 4 | 5 |
+    |required | int64 | assetId | = | 1 | ; |
+    repeated Student assets = 3;
+
+     --convert--
+
+    int64_field<"assetId", 1>,
+    message_field<"students", 3, Student, repeated>
 
 
-void Parser::rewrite_message(std::vector<std::string_view>::iterator &it)
+    fields
+    int32   = int32_field
+    unit32  = uint32_field
+    int64   = int64_field
+    uint64  = uint64_field
+
+    float   = float_field
+    double  = double_field
+
+    string  = string_field
+
+    bool    = bool_field
+    unkown_type = lookup enum_field AND message_field
+
+    */
+
+    bool repeated = false;
+    int pos = 0;
+
+    switch (pos) {
+    case 0:
+        // repeat
+        if(*it == "repeated") repeated = true;
+
+        break;
+    case 1:
+        // type
+
+        break;
+    case 3:
+        // wireid
+
+        break;
+    }
+    pos++;
+
+    /*
+    else if(*it == ";")
+    {
+        if( std::next(it)->starts_with("//") || std::next(it)->starts_with("/*") )
+        {
+            m_output.append(">,");
+            std::advance(it,1);
+            m_output.append(*it);
+            m_output.append("\n\t<");
+        }
+        else
+        {
+            m_output.append(">,");
+            m_output.append("\n\t<");
+        }
+
+        // reset field flags
+        repeated = false;
+    }
+    */
+
+}
+
+void Parser::rewrite_message()
 {
 /*
     message Student {
@@ -118,44 +189,78 @@ void Parser::rewrite_message(std::vector<std::string_view>::iterator &it)
     m_output.append("using ");   // message
     std::advance(it,1);         // TYPE
     m_output.append(*it);
+    m_messages.push_back(*it);
 
-
-    m_output.append(" = message< \n\t");    // {
+    m_output.append(" = message< \n\t<");    // {
     std::advance(it,2);
 
-    // foreach subrange contains x do y ?
-    // last no comma
+
+    //constexpr std::string_view close("}");
+
+
+
+
+     //mark feilds ;
+    /*
+    std::vector< std::vector<std::string_view>::iterator > fields;
+    auto start = it;
 
     while(*it != "}")
     {
         if(*it == ";")
         {
-            if( std::next(it)->starts_with("//") || std::next(it)->starts_with("/*") )
-            {
-                m_output.append(",");
-                std::advance(it,1);
-                m_output.append(*it);
-                m_output.append("\n\t");
-            }
-            else
-            {
-                m_output.append(",");
-                m_output.append("\n\t");
-            }
+
+            fields.push_back(it);
+
         }
-        else if( it->starts_with("//") || it->starts_with("/*") )
+        std::advance(it,1);
+    }
+    // it = }
+    */
+
+    /*
+    for (auto feild_end = fields.begin(); feild_end != std::prev(fields.end()); ++feild_end)
+    {
+        rewrite_message_field(start, *feild_end);
+    }
+    std::cout << "last\n";
+    rewrite_message_field(start, *fields.end());
+    */
+
+
+
+
+
+
+
+
+    while(*it != "}")
+    {
+
+
+        if( it->starts_with("//") || it->starts_with("/*") )
         {
             m_output.append(*it);
             m_output.append("\n\t");
         }
         else
         {
-            m_output.append(*it);
+            // don't iterate do the line
+            // in feild line
+            rewrite_message_field();
+
+
+
+
+
         }
-        std::advance(it,1);
+
+
+    std::advance(it,1);
     }
 
-    m_output.append(">\n\n");
+
+    m_output.append(">;\n\n");
 
 }
 
@@ -223,22 +328,26 @@ bool Parser::tokenize()
 
 bool Parser::parse(std::string_view source)
 {
-    //m_output.clear();
+    m_output.clear();
     m_output.reserve(source.size());
     m_source = source;
 
+    m_enums.clear();
+    m_messages.clear();
+    m_tokens.clear();
+
     if(tokenize())
     {
-        for (auto it = m_tokens.begin(); it != m_tokens.end(); ++it) {
+        for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
 
             // current index
             //auto i = std::distance(m_tokens.begin(), it);
             //std::cout << i << "\n";
 
-            if      (it->starts_with("//") || it->starts_with("/*"))     rewrite_comment(it);
-            else if (it->starts_with("import"))                          rewrite_include(it);
-            else if (it->starts_with("enum"))                            rewrite_enum(it);
-            else if (it->starts_with("message"))                         rewrite_message(it);
+            if      (it->starts_with("//") || it->starts_with("/*"))     rewrite_comment();
+            else if (it->starts_with("import"))                          rewrite_include();
+            else if (it->starts_with("enum"))                            rewrite_enum();
+            else if (it->starts_with("message"))                         rewrite_message();
         }
     }
 

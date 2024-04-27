@@ -11,12 +11,18 @@ class Parser
 private:
     std::string_view m_source;
     std::string m_output;
+    std::vector<std::string_view> m_enums;
+    std::vector<std::string_view> m_messages;
     std::vector<std::string_view> m_tokens;
 
-    void rewrite_comment(std::vector<std::string_view>::iterator &it);
-    void rewrite_include(std::vector<std::string_view>::iterator &it);
-    void rewrite_enum(std::vector<std::string_view>::iterator &it);
-    void rewrite_message(std::vector<std::string_view>::iterator &it);
+    std::vector<std::string_view>::iterator it;
+
+    void rewrite_comment();
+    void rewrite_include();
+    void rewrite_enum();
+
+    void rewrite_message_field();
+    void rewrite_message();
 
     bool tokenize();
 
