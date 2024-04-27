@@ -1,10 +1,10 @@
 # proto-to-protopuf
-A parser for Google proto source files to native compatible [protopuf](https://github.com/PragmaTwice/protopuf) C++ headers 
+A parser for Google proto source files to [protopuf](https://github.com/PragmaTwice/protopuf) C++ headers 
 
 ## Limitations
-- only supports proto version 2 files and common field types - (should be relative easy to overload)
+- only supports proto version 2 files and common field types - (should be relatively easy to overload)
 - ignores namespace package
-- tokenizer is confused by comment looking string literals aka - file paths
+- tokenizer is confused by comment looking string literals aka - file paths // and /*
 - designed to be used as a batch/shell program, wrap it in a script or alter main to recurse over many files
 - doesn't generate make files etc
 
