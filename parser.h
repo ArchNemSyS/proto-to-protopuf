@@ -17,11 +17,23 @@ private:
 
     std::vector<std::string_view>::iterator it;
 
+    std::vector<std::pair<std::string_view, std::string_view>> protopuf_types {
+        { "int32", "int32_field" },
+        { "unit32", "uint32_field" },
+        { "int64", "int64_field" },
+        { "uint64", "uint64_field" },
+        { "float", "float_field" },
+        { "double", "double_field" },
+        { "string", "string_field" },
+        { "bool", "bool_field" }
+    };
+
     void rewrite_comment();
     void rewrite_include();
     void rewrite_enum();
 
-    void rewrite_message_field();
+    void rewrite_field_comment();
+    void rewrite_message_field(std::string comma);
     void rewrite_message();
 
     bool tokenize();

@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include <iostream>
+#include <cassert>
 #include <algorithm>
 
 
@@ -45,118 +46,222 @@ void Parser::rewrite_enum()
     */
 
 
-    m_output.append("enum ");   // enum
-    std::advance(it,1);         // TYPE
+    // header
+    // |enum|ProtoOAErrorCode|{|
+    assert(*it == "enum");
+    m_output.append("enum ");
+
+    std::advance(it,1);
     m_output.append(*it);
     m_enums.push_back(*it);
 
-    m_output.append("{ \n\t");    // {
-    std::advance(it,2);
+    std::advance(it,1);
+    assert(*it == "{");
+    m_output.append(" {");
 
+    std::advance(it,1);
 
     while(*it != "}")
     {
-        if(*it == ";")
+        // field - newline
+        m_output.append(" \t");
+
+        if( it->starts_with("//") || it->starts_with("/*") || *it == "\n")
         {
-            if( std::next(it)->starts_with("//") || std::next(it)->starts_with("/*") )
+            m_output.append(*it);
+            //std::advance(it,1);
+        }
+        else if( *std::next(it,1) == "=" )
+        {
+            // |ENUM_FIELD|=|1|;|// OPTIONAL COMMENT|
+            m_output.append(*it);
+            std::advance(it,2);
+            m_output.append(" = ");
+            m_output.append(*it);
+            std::advance(it,1);
+
+            assert(*it == ";");
+            m_output.append(",");
+            std::advance(it,1);
+
+            while(*it != "\n")
             {
-                m_output.append(",");
-                std::advance(it,1);
                 m_output.append(*it);
-                m_output.append("\n\t");
+                std::advance(it,1);
             }
-            else
-            {
-                m_output.append(",");
-                m_output.append("\n\t");
-            }
-        }
-        else if( it->starts_with("//") || it->starts_with("/*") )
-        {
-            m_output.append(*it);
-            m_output.append("\n\t");
-        }
-        else
-        {
-            m_output.append(*it);
+
+            assert(*it == "\n");
+            m_output.append("\n");
+
         }
         std::advance(it,1);
     }
-
     m_output.append("}\n\n");
+    std::advance(it,1);
+
+}
+
+void Parser::rewrite_field_comment()
+{
+
 
 
 }
 
-void Parser::rewrite_message_field()
+void Parser::rewrite_message_field(std::string comma)
 {
     /*
-    |   0     |   1   |   2     | 3 | 4 | 5 |
-    |required | int64 | assetId | = | 1 | ; |
-    repeated Student assets = 3;
+    |   0     |   1    |   2     | 3 | 4 | 5 |
+    |required | int64  | assetId | = | 1 | ; |
+    |optional | Day    | weekday | = | 2 | ; |
+    |repeated | Student| assets  | = | 3 | ; |
 
      --convert--
 
     int64_field<"assetId", 1>,
+    enum_field<"weekday", 2, Day>
     message_field<"students", 3, Student, repeated>
-
-
-    fields
-    int32   = int32_field
-    unit32  = uint32_field
-    int64   = int64_field
-    uint64  = uint64_field
-
-    float   = float_field
-    double  = double_field
-
-    string  = string_field
-
-    bool    = bool_field
-    unkown_type = lookup enum_field AND message_field
-
     */
+
+
+    m_output.append("\t");
+
 
     bool repeated = false;
-    int pos = 0;
+    /*
+ * | 0 |
+ * required
+ * optional
+ * repeated
+ */
 
-    switch (pos) {
-    case 0:
-        // repeat
-        if(*it == "repeated") repeated = true;
+    std::cout << "| 0 |" << *it << " | ";
+    if(*it == "repeated")   repeated = true;
+    std::advance(it,1);
 
-        break;
-    case 1:
-        // type
 
-        break;
-    case 3:
-        // wireid
-
-        break;
-    }
-    pos++;
 
     /*
-    else if(*it == ";")
-    {
-        if( std::next(it)->starts_with("//") || std::next(it)->starts_with("/*") )
-        {
-            m_output.append(">,");
-            std::advance(it,1);
-            m_output.append(*it);
-            m_output.append("\n\t<");
-        }
-        else
-        {
-            m_output.append(">,");
-            m_output.append("\n\t<");
-        }
+ * | 1 |
+    fields
+int32   = int32_field
+unit32  = uint32_field
+int64   = int64_field
+uint64  = uint64_field
 
-        // reset field flags
-        repeated = false;
+float   = float_field
+double  = double_field
+
+string  = string_field
+
+bool    = bool_field
+unkown_type = lookup enum_field AND message_field
+*/
+
+    /*
+std::map<std::string,std::string> protopuf_types{
+    { "int32", "int32_field" },
+    { "unit32", "uint32_field" },
+    { "int64", "int64_field" },
+    { "uint64", "uint64_field" },
+    { "float", "float_field" },
+    { "double", "double_field" },
+    { "string", "string_field" },
+    { "bool", "bool_field" }
+};
+*/
+
+    /*
+std::vector lookup_types    = {"int32",         "unit32",       "int64",        "uint64",
+                                "float",        "double",       "string",       "bool"};
+std::vector protopuf_types  = {"int32_field",   "uint32_field", "int64_field",  "uint64_field",
+                                "float_field",  "double_field", "string_field", "bool_field"};
+
+int field_type = -1;
+for (int i = 0; i < lookup_types.size(); i++)
+{
+    if (lookup_types[i] == *it)
+    {
+        known_type = i;
     }
-    */
+}
+*/
+
+
+
+    //  |   0     |   1             |   2               | 3 | 4 | 5      |
+    //  |required | int64           | assetId           | = | 1 | ;      |
+    //  |optional |ProtoOADayOfWeek |swapRollover3Days  | = | 6 |[default|=|MONDAY]|;|// Day of the week when SWAP charge amount will be tripled. Doesn't impact Rollover Commission.|
+
+    std::cout << "| 1 |" << *it << " | ";
+    auto known_type = std::ranges::find(protopuf_types, *it, &std::pair<std::string_view, std::string_view>::first);
+
+
+    if( known_type != protopuf_types.end() )
+    {
+        // is proto_puf type
+        m_output.append( known_type->second );
+        std::cout << "| 1 |" << *it << " | ";
+    }
+    else if( std::find(m_enums.begin(), m_enums.end(), *it) != m_enums.end() )
+    {
+        // is enum_field ?
+        m_output.append( "enum_field" );
+    }
+    else if( std::find(m_messages.begin(), m_messages.end(), *it) != m_messages.end() )
+    {
+        // is message_field ?
+        m_output.append( "message_field" );
+    }
+    else
+    {
+        assert("unknown feild type");
+    }
+    std::advance(it,1);
+
+    // | 2 |
+    std::cout << "| 2 |" << *it << " | ";
+
+    m_output.append( "<\"" );
+    m_output.append( *it );
+    m_output.append( "\", " );
+    std::advance(it,1);
+
+    // | 3 |
+    std::cout << "| 3 |" << *it << " | ";
+
+    assert(*it == "=");
+    //m_output.append( " = " );
+    std::advance(it,1);
+
+    // | 4 |
+    std::cout << "| 4 |" << *it << " | ";
+
+    m_output.append( *it );
+    std::advance(it,1);
+
+
+
+    // repeated ?
+    if(repeated)
+    {
+        m_output.append( ", repeated" );
+    }
+
+    // | 5 | close field
+    m_output.append( ">" );
+    m_output.append(comma);
+
+    // | >5 |  comment remaining tokens
+
+    m_output.append(" //");
+    while(*it != "\n")
+    {
+        m_output.append( *it );
+        std::advance(it,1);
+    }
+    m_output.append("\n");
+
 
 }
 
@@ -186,13 +291,30 @@ void Parser::rewrite_message()
     >;
  */
 
+    /*
+    // debug
+    while(*it != "}")
+    {
+        std::cout << "|";
+        while(*it != "\n")
+        {
+            std::cout << *it << "|";
+            std::advance(it,1);
+        }
+        std::advance(it,1);
+        std::cout << "\n";
+    }
+    */
+
+    //message ProtoOAAsset {
+
     m_output.append("using ");   // message
     std::advance(it,1);         // TYPE
     m_output.append(*it);
     m_messages.push_back(*it);
 
-    m_output.append(" = message< \n\t<");    // {
-    std::advance(it,2);
+    m_output.append(" = message< \n");    // {
+    std::advance(it,3);
 
 
     //constexpr std::string_view close("}");
@@ -230,37 +352,61 @@ void Parser::rewrite_message()
 
 
 
-
-
-
-
-    while(*it != "}")
+    int n_fields = 0;
+    auto next = it;
+    while(*next != "}")
     {
-
-
-        if( it->starts_with("//") || it->starts_with("/*") )
+        if(*next == ";")
         {
-            m_output.append(*it);
-            m_output.append("\n\t");
+            n_fields++;
         }
-        else
-        {
-            // don't iterate do the line
-            // in feild line
-            rewrite_message_field();
-
-
-
-
-
-        }
-
-
-    std::advance(it,1);
+        std::advance(next,1);
     }
 
 
-    m_output.append(">;\n\n");
+
+
+    if(n_fields < 1)
+    {
+        //empty
+        it = next;
+
+    }
+    else
+    {
+        int i = 1;
+
+        while(*it != "}")
+        {
+            if( it->starts_with("//") || it->starts_with("/*") )
+            {
+                m_output.append(*it);
+                m_output.append("\n");
+            }
+            else if( *std::next(it,3) == "=" )
+            {
+
+                if(i == n_fields)
+                {
+                    rewrite_message_field("");
+                }
+                else
+                {
+                    rewrite_message_field(",");
+                }
+                i++;
+            }
+
+        std::advance(it,1);
+        }
+    }
+
+     m_output.append(">;\n\n");
+
+
+
+
+
 
 }
 
@@ -268,7 +414,6 @@ void Parser::rewrite_message()
 bool Parser::tokenize()
 {
     //will get fooled by weird filespaths literals that look like comments
-
 
     constexpr std::string_view delims(";/\n ");
 
@@ -288,7 +433,9 @@ bool Parser::tokenize()
 
                 if (end != last)
                 {
+
                     m_tokens.emplace_back(first, end - first);
+                    m_tokens.emplace_back("\n");
                     second = end;
                 }
             }
@@ -305,14 +452,15 @@ bool Parser::tokenize()
                 }
             }
         }
-        else if(*second == ';')
+        else if(*second == ';' || *second == '\n')
         {
             m_tokens.emplace_back(first, second - first);
-            m_tokens.emplace_back(";");
+            m_tokens.emplace_back(second, 1);
+
         }
         else
         {
-            // split by whitespace newline
+            // split by whitespace
             if (first != second)
             {
                 m_tokens.emplace_back(first, second - first);
@@ -344,10 +492,16 @@ bool Parser::parse(std::string_view source)
             //auto i = std::distance(m_tokens.begin(), it);
             //std::cout << i << "\n";
 
+
             if      (it->starts_with("//") || it->starts_with("/*"))     rewrite_comment();
             else if (it->starts_with("import"))                          rewrite_include();
             else if (it->starts_with("enum"))                            rewrite_enum();
             else if (it->starts_with("message"))                         rewrite_message();
+
+
+
+
+            //std::cout << "|" << *it ;
         }
     }
 
