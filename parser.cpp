@@ -28,6 +28,11 @@ include "filename.proto.h"
     m_output.append("include ");
 
     std::advance(it,1); // "filename.proto"
+
+    // Parse Include file - import symbols
+    // maybe change function to return parser
+    Parser::parseFile( std::string{*it} );
+
     it->remove_suffix(1);
 
     m_output.append( *it );
@@ -556,7 +561,8 @@ void Parser::parseFile(std::string filename)
     }
     else
     {
-        std::cerr << filename << " could not be opened for reading!\n";
+        //std::cerr << filename << " could not be opened for reading!\n";
+        throw std::runtime_error(filename + " could not be opened for reading\n");
     }
 
 

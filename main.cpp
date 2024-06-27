@@ -15,6 +15,8 @@ int main(int argc, char* argv[])
             {
             Parser::parseFile( entry.path().string() );
             }
+
+
             catch (const std::exception& exception)
             {
                 std::cerr << "exception: " << exception.what() << '\n';
