@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(proto_parser main.cpp
     parser.h parser.cpp
-    tmp)
+    )
 
 include(GNUInstallDirs)
 install(TARGETS proto_parser

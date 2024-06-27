@@ -5,9 +5,20 @@
 #include <string_view>
 #include <vector>
 
+class Parser;
+
+struct ParsedFile
+{
+    std::string filename;
+    Parser*     parser;
+};
+
 
 class Parser
 {
+static std::vector<ParsedFile> parsed_files;
+
+
 private:
     std::string_view m_source;
     std::string m_output;
@@ -28,6 +39,9 @@ private:
         { "bool", "bool_field" }
     };
 
+
+
+
     void rewrite_comment();
     void rewrite_include();
     void rewrite_enum();
@@ -37,10 +51,11 @@ private:
     void rewrite_message();
 
     bool tokenize();
+    bool parse(std::string_view source);
 
 public:
     Parser();
-    bool parse(std::string_view source);
+    static void parseFile(std::string filename);
 
 };
 

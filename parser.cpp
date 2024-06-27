@@ -1,11 +1,17 @@
 #include "parser.h"
 
+#include <fstream>
 #include <iostream>
 #include <cassert>
 #include <algorithm>
+#include <cstdlib>
+#include <utility>
 
+
+std::vector<ParsedFile> Parser::parsed_files;
 
 Parser::Parser(){}
+
 void Parser::rewrite_comment()
 {
     m_output.append(*it);
@@ -135,7 +141,6 @@ void Parser::rewrite_message_field(std::string comma)
  * repeated
  */
 
-    std::cout << "| 0 |" << *it << " | ";
     if(*it == "repeated")   repeated = true;
     std::advance(it,1);
 
@@ -193,15 +198,16 @@ for (int i = 0; i < lookup_types.size(); i++)
     //  |required | int64           | assetId           | = | 1 | ;      |
     //  |optional |ProtoOADayOfWeek |swapRollover3Days  | = | 6 |[default|=|MONDAY]|;|// Day of the week when SWAP charge amount will be tripled. Doesn't impact Rollover Commission.|
 
-    std::cout << "| 1 |" << *it << " | ";
+
     auto known_type = std::ranges::find(protopuf_types, *it, &std::pair<std::string_view, std::string_view>::first);
 
+    bool bknown = (known_type != protopuf_types.end());
 
     if( known_type != protopuf_types.end() )
     {
         // is proto_puf type
         m_output.append( known_type->second );
-        std::cout << "| 1 |" << *it << " | ";
+
     }
     else if( std::find(m_enums.begin(), m_enums.end(), *it) != m_enums.end() )
     {
@@ -215,28 +221,22 @@ for (int i = 0; i < lookup_types.size(); i++)
     }
     else
     {
-        assert("unknown feild type");
+        assert(false && "unknown feild type");
     }
     std::advance(it,1);
 
     // | 2 |
-    std::cout << "| 2 |" << *it << " | ";
-
     m_output.append( "<\"" );
     m_output.append( *it );
     m_output.append( "\", " );
     std::advance(it,1);
 
     // | 3 |
-    std::cout << "| 3 |" << *it << " | ";
-
     assert(*it == "=");
     //m_output.append( " = " );
     std::advance(it,1);
 
     // | 4 |
-    std::cout << "| 4 |" << *it << " | ";
-
     m_output.append( *it );
     std::advance(it,1);
 
@@ -476,13 +476,13 @@ bool Parser::tokenize()
 
 bool Parser::parse(std::string_view source)
 {
-    m_output.clear();
+    //m_output.clear();
     m_output.reserve(source.size());
     m_source = source;
 
-    m_enums.clear();
-    m_messages.clear();
-    m_tokens.clear();
+    //m_enums.clear();
+    //m_messages.clear();
+    //m_tokens.clear();
 
     if(tokenize())
     {
@@ -512,4 +512,52 @@ bool Parser::parse(std::string_view source)
     return true;
 }
 
+void Parser::parseFile(std::string filename)
+{
+    std::cout << "loading " << filename << '\n';
 
+
+    for (const auto &file :  Parser::parsed_files )
+    {
+        if( file.filename == filename)
+        {
+            // already parsed skip
+            return;
+        }
+    }
+
+
+    std::ifstream inf{ filename };
+
+    if (inf)
+    {
+        inf.seekg(0, std::ios::end);
+        size_t size = inf.tellg();
+        std::string source(size, ' ');
+        inf.seekg(0);
+        inf.read(&source[0], size);
+
+        std::cout << source << std::endl;
+
+        Parser* parser = new Parser();
+
+        if(parser->parse(source))
+        {
+            ParsedFile parsedFile{ filename, parser };
+            Parser::parsed_files.push_back(parsedFile);
+        }
+        else
+        {
+            delete parser;
+            parser = nullptr;
+            throw std::runtime_error(filename + " could not be parsed\n");
+        }
+
+    }
+    else
+    {
+        std::cerr << filename << " could not be opened for reading!\n";
+    }
+
+
+}

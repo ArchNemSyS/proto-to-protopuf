@@ -1,44 +1,30 @@
 #include "parser.h"
 
-#include <iostream>
-#include <fstream>
 #include <string>
-
-
-
-
-
-
+#include <filesystem>
+#include <iostream>
 
 
 int main(int argc, char* argv[])
 {
-    std::cout << "loading " << argv[1] << '\n';
-
-    //std::ifstream inf{ argv[1] };
-    std::ifstream inf{ "test.proto" };
-
-    if (inf)
+    for (const auto & entry : std::filesystem::directory_iterator(".")) //argv[1]
     {
-        inf.seekg(0, std::ios::end);
-        size_t size = inf.tellg();
-        std::string source(size, ' ');
-        inf.seekg(0);
-        inf.read(&source[0], size);
+        if (entry.path().string().ends_with(".proto")) {
 
-
-
-        Parser parser;
-        parser.parse(source);
-
+            try
+            {
+            Parser::parseFile( entry.path().string() );
+            }
+            catch (const std::exception& exception)
+            {
+                std::cerr << "exception: " << exception.what() << '\n';
+            }
+            catch(...)
+            {
+                std::cerr << "Abnormal termination\n";
+            }
+        }
     }
-    else
-    {
-        std::cerr << argv[1] << " could not be opened for reading!\n";
-        return 1;
-    }
-
-
 
     return 0;
 }
