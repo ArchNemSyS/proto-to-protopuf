@@ -12,10 +12,24 @@ std::vector<ParsedFile> Parser::parsed_files;
 
 Parser::Parser(){}
 
+
 void Parser::rewrite_comment()
 {
     m_output.append(*it);
     m_output.append("\n");
+}
+
+
+void Parser::merge_symbols(Parser& source, Parser& target)
+{
+    std::vector<std::string_view> m_enums;
+    std::vector<std::string_view> m_messages;
+
+    target.m_enums.reserve( target.m_enums.size() + source.m_enums.size() );
+    target.m_enums.insert( target.m_enums.end(), source.m_enums.begin(), source.m_enums.end() );
+
+    target.m_messages.reserve( target.m_messages.size() + source.m_messages.size() );
+    target.m_enums.insert( target.m_messages.end(), source.m_messages.begin(), source.m_messages.end() );
 }
 
 void Parser::rewrite_include()
@@ -30,8 +44,9 @@ include "filename.proto.h"
     std::advance(it,1); // "filename.proto"
 
     // Parse Include file - import symbols
-    // maybe change function to return parser
-    Parser::parseFile( std::string{*it} );
+    // if successful
+    Parser* parser = Parser::parseFile( std::string{*it} );
+    merge_symbols(*parser,*this);
 
     it->remove_suffix(1);
 
@@ -517,7 +532,12 @@ bool Parser::parse(std::string_view source)
     return true;
 }
 
-void Parser::parseFile(std::string filename)
+
+
+
+
+
+Parser* Parser::parseFile(std::string filename)
 {
     std::cout << "loading " << filename << '\n';
 
@@ -527,7 +547,7 @@ void Parser::parseFile(std::string filename)
         if( file.filename == filename)
         {
             // already parsed skip
-            return;
+            return file.parser;
         }
     }
 
@@ -550,6 +570,7 @@ void Parser::parseFile(std::string filename)
         {
             ParsedFile parsedFile{ filename, parser };
             Parser::parsed_files.push_back(parsedFile);
+            return parsedFile.parser;
         }
         else
         {

@@ -55,7 +55,10 @@ private:
 
 public:
     Parser();
-    static void parseFile(std::string filename);
+
+    static Parser *parseFile(std::string filename);
+
+    void merge_symbols(Parser&, Parser&);
 
 };
 
