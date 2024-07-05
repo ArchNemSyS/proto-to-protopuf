@@ -512,6 +512,8 @@ bool Parser::parse(std::string_view source)
             //auto i = std::distance(m_tokens.begin(), it);
             //std::cout << i << "\n";
 
+            // need to forward declare / pull symbol definitions to top
+
 
             if      (it->starts_with("//") || it->starts_with("/*"))     rewrite_comment();
             else if (it->starts_with("import"))                          rewrite_include();
