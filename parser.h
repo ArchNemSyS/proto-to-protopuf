@@ -40,7 +40,7 @@ private:
     };
 
 
-
+    void forward_symbol();
 
     void rewrite_comment();
     void rewrite_include();

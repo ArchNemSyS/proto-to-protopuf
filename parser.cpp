@@ -46,7 +46,7 @@ include "filename.proto.h"
     // Parse Include file - import symbols
     // if successful
     Parser* parser = Parser::parseFile( std::string{*it} );
-    merge_symbols(*parser,*this);
+    //merge_symbols(*parser,*this);
 
     it->remove_suffix(1);
 
@@ -54,6 +54,30 @@ include "filename.proto.h"
     m_output.append(".h\"\n"); // "filename.proto.h"
 
 }
+
+void Parser::forward_symbol()
+{
+    // |keyword|type_name|{|
+
+    if(*it == "enum")
+    {
+        std::advance(it,1);
+        m_enums.push_back(*it);
+    }
+    else // "message"
+    {
+        std::advance(it,1);
+        m_messages.push_back(*it);
+    }
+
+    //skip to end of block
+    while(*it != "}")
+    {
+        std::advance(it,1);
+    }
+    std::advance(it,1);
+}
+
 
 void Parser::rewrite_enum()
 {
@@ -79,7 +103,7 @@ void Parser::rewrite_enum()
 
     std::advance(it,1);
     m_output.append(*it);
-    m_enums.push_back(*it);
+    //m_enums.push_back(*it);
 
     std::advance(it,1);
     assert(*it == "{");
@@ -506,13 +530,21 @@ bool Parser::parse(std::string_view source)
 
     if(tokenize())
     {
+        // forward enum and message type declarions -- pull to top
+        for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
+            if (it->starts_with("enum") || it->starts_with("message"))
+            {
+                forward_symbol();
+            }
+        }
+
         for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
 
             // current index
             //auto i = std::distance(m_tokens.begin(), it);
             //std::cout << i << "\n";
 
-            // need to forward declare / pull symbol definitions to top
+
 
 
             if      (it->starts_with("//") || it->starts_with("/*"))     rewrite_comment();
