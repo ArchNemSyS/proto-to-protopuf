@@ -75,7 +75,7 @@ void Parser::forward_symbol()
     {
         std::advance(it,1);
     }
-    std::advance(it,1);
+    //std::advance(it,1);
 }
 
 
@@ -245,7 +245,6 @@ for (int i = 0; i < lookup_types.size(); i++)
 
     auto known_type = std::ranges::find(protopuf_types, *it, &std::pair<std::string_view, std::string_view>::first);
 
-    bool bknown = (known_type != protopuf_types.end());
 
     if( known_type != protopuf_types.end() )
     {
@@ -532,6 +531,7 @@ bool Parser::parse(std::string_view source)
     {
         // forward enum and message type declarions -- pull to top
         for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
+
             if (it->starts_with("enum") || it->starts_with("message"))
             {
                 forward_symbol();

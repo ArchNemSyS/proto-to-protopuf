@@ -30,7 +30,7 @@ private:
 
     std::vector<std::pair<std::string_view, std::string_view>> protopuf_types {
         { "int32", "int32_field" },
-        { "unit32", "uint32_field" },
+        { "uint32", "uint32_field" },
         { "int64", "int64_field" },
         { "uint64", "uint64_field" },
         { "float", "float_field" },
