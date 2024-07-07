@@ -46,7 +46,7 @@ include "filename.proto.h"
     // Parse Include file - import symbols
     // if successful
     Parser* parser = Parser::parseFile( std::string{*it} );
-    //merge_symbols(*parser,*this);
+    merge_symbols(*parser,*this);
 
     it->remove_suffix(1);
 
@@ -151,12 +151,6 @@ void Parser::rewrite_enum()
 
 }
 
-void Parser::rewrite_field_comment()
-{
-
-
-
-}
 
 void Parser::rewrite_message_field(std::string comma)
 {
@@ -559,7 +553,7 @@ bool Parser::parse(std::string_view source)
         }
     }
 
-    std::cout << m_output;
+    //std::cout << m_output;
 
 
 
@@ -621,4 +615,23 @@ Parser* Parser::parseFile(std::string filename)
     }
 
 
+}
+
+
+void Parser::writeParsedFiles(std::string path)
+{
+    for (const auto &file : parsed_files)
+    {
+        std::ofstream fileout(path + "/" + file.filename + ".h", std::ios::out);
+
+        if (!fileout) {
+            throw std::runtime_error(file.filename + " could not be writen\n");
+        }
+        else {
+            fileout << file.parser->m_output;
+            fileout.close();
+        }
+
+
+    }
 }

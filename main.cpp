@@ -7,6 +7,10 @@
 
 int main(int argc, char* argv[])
 {
+
+    std::string output_path = std::filesystem::current_path().string() + "/protopuf";
+    std::filesystem::create_directories(output_path);
+
     for (const auto & entry : std::filesystem::directory_iterator(".")) //argv[1]
     {
         if (entry.path().string().ends_with(".proto")) {
@@ -28,5 +32,13 @@ int main(int argc, char* argv[])
         }
     }
 
+    try
+    {
+        Parser::writeParsedFiles( output_path );
+    }
+    catch(...)
+    {
+        std::cerr << "Abnormal termination while writing output\n";
+    }
     return 0;
 }

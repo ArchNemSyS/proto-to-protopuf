@@ -46,7 +46,6 @@ private:
     void rewrite_include();
     void rewrite_enum();
 
-    void rewrite_field_comment();
     void rewrite_message_field(std::string comma);
     void rewrite_message();
 
@@ -57,6 +56,7 @@ public:
     Parser();
 
     static Parser *parseFile(std::string filename);
+    static void writeParsedFiles(std::string path);
 
     void merge_symbols(Parser&, Parser&);
 
