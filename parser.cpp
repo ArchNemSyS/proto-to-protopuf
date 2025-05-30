@@ -8,7 +8,6 @@
 #include <utility>
 
 
-std::vector<ParsedFile> Parser::parsed_files;
 
 Parser::Parser(){}
 
@@ -22,14 +21,18 @@ void Parser::rewrite_comment()
 
 void Parser::merge_symbols(Parser& source, Parser& target)
 {
-    std::vector<std::string_view> m_enums;
-    std::vector<std::string_view> m_messages;
-
+    std::cout << "merge_symbols" << std::endl;
+    if(source.m_enums.size() > 0)
+    {
     target.m_enums.reserve( target.m_enums.size() + source.m_enums.size() );
     target.m_enums.insert( target.m_enums.end(), source.m_enums.begin(), source.m_enums.end() );
+    }
 
+    if(source.m_messages.size() > 0)
+    {
     target.m_messages.reserve( target.m_messages.size() + source.m_messages.size() );
-    target.m_enums.insert( target.m_messages.end(), source.m_messages.begin(), source.m_messages.end() );
+    target.m_messages.insert( target.m_messages.end(), source.m_messages.begin(), source.m_messages.end() );
+    }
 }
 
 void Parser::rewrite_include()
@@ -45,8 +48,13 @@ include "filename.proto.h"
 
     // Parse Include file - import symbols
     // if successful
-    Parser* parser = Parser::parseFile( std::string{*it} );
-    merge_symbols(*parser,*this);
+
+    // token is qouated "", need to substring
+    std::cout << "rewrite_include " << *it << std::endl;
+    Parser* headerFile = Parser::parseFile( "./"+ std::string{ it->substr(1, it->size() - 2) } );
+
+
+    merge_symbols(*headerFile,*this);
 
     it->remove_suffix(1);
 
@@ -62,11 +70,19 @@ void Parser::forward_symbol()
     if(*it == "enum")
     {
         std::advance(it,1);
+
+        // string copy
+        //m_enums.push_back(std::string(*it).c_str());
+
         m_enums.push_back(*it);
     }
     else // "message"
     {
         std::advance(it,1);
+
+        // string copy
+        //m_messages.push_back(std::string(*it).c_str());
+
         m_messages.push_back(*it);
     }
 
@@ -454,7 +470,9 @@ bool Parser::tokenize()
 
     constexpr std::string_view delims(";/\n ");
 
-    for (auto first = m_source.data(), second = m_source.data(), last = first + m_source.size(); second != last && first != last; first = second + 1) {
+    // char* m_source.data
+
+    for (auto first = m_source.c_str(), second = m_source.c_str(), last = first + m_source.size(); second != last && first != last; first = second + 1) {
         second = std::find_first_of(first, last, std::cbegin(delims), std::cend(delims));
 
 
@@ -466,7 +484,7 @@ bool Parser::tokenize()
             {
 
                 //single line comment
-                end = std::find(first, last, '\n');
+                end = std::find(first, last, '\n');   // used to be const char* ?
 
                 if (end != last)
                 {
@@ -511,11 +529,11 @@ bool Parser::tokenize()
     return true;
 }
 
-bool Parser::parse(std::string_view source)
+bool Parser::parse(std::string source)
 {
     //m_output.clear();
     m_output.reserve(source.size());
-    m_source = source;
+    m_source = std::move(source);
 
     //m_enums.clear();
     //m_messages.clear();
@@ -567,19 +585,18 @@ bool Parser::parse(std::string_view source)
 
 Parser* Parser::parseFile(std::string filename)
 {
-    std::cout << "loading " << filename << '\n';
-
 
     for (const auto &file :  Parser::parsed_files )
     {
         if( file.filename == filename)
         {
+            std::cout << "Skipped Parsing " << filename << '\n';
             // already parsed skip
             return file.parser;
         }
     }
 
-
+    std::cout << "Parser::parseFile loading " << filename << '\n';
     std::ifstream inf{ filename };
 
     if (inf)
@@ -590,7 +607,7 @@ Parser* Parser::parseFile(std::string filename)
         inf.seekg(0);
         inf.read(&source[0], size);
 
-        std::cout << source << std::endl;
+        //std::cout << source << std::endl;
 
         Parser* parser = new Parser();
 
@@ -598,6 +615,7 @@ Parser* Parser::parseFile(std::string filename)
         {
             ParsedFile parsedFile{ filename, parser };
             Parser::parsed_files.push_back(parsedFile);
+            inf.close();
             return parsedFile.parser;
         }
         else
@@ -606,6 +624,7 @@ Parser* Parser::parseFile(std::string filename)
             parser = nullptr;
             throw std::runtime_error(filename + " could not be parsed\n");
         }
+        inf.close();
 
     }
     else
@@ -614,7 +633,7 @@ Parser* Parser::parseFile(std::string filename)
         throw std::runtime_error(filename + " could not be opened for reading\n");
     }
 
-
+    return nullptr;
 }
 
 
