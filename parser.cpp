@@ -6,7 +6,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <utility>
-
+#include <algorithm>
+#include <cctype>
 
 
 Parser::Parser(){}
@@ -647,7 +648,19 @@ void Parser::writeParsedFiles(std::string path)
             throw std::runtime_error(file.filename + " could not be writen\n");
         }
         else {
+
+            //HEADERNAME
+            std::string upper = file.filename.substr(2, file.filename.find_last_of('.')-2 );
+            std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+
+            // write header guard
+            fileout << "#ifndef " << upper << '\n'
+                    << "#define " << upper << "\n\n";
+
             fileout << file.parser->m_output;
+
+            fileout << '\n' << "#endif";
+
             fileout.close();
         }
 
