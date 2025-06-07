@@ -163,7 +163,7 @@ void Parser::rewrite_enum()
         }
         std::advance(it,1);
     }
-    m_output.append("}\n\n");
+    m_output.append("};\n\n");
     std::advance(it,1);
 
 }
