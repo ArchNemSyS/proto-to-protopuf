@@ -43,7 +43,7 @@ import "filename.proto";
     --convert--
 include "filename.proto.h"
 */
-    m_output.append("include ");
+    m_output.append("#include ");
 
     std::advance(it,1); // "filename.proto"
 
