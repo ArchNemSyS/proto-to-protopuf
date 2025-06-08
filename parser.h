@@ -49,6 +49,8 @@ private:
     void rewrite_include();
     void rewrite_enum();
 
+    void close_message_field(std::string comma, bool repeated);
+    void rewrite_typed_field(std::string_view fieldtemplate);
     void rewrite_message_field(std::string comma);
     void rewrite_message();
 

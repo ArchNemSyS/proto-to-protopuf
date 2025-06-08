@@ -5,9 +5,10 @@ A simple parser for Google proto source files to [protopuf](https://github.com/P
 ## Limitations
 - only supports proto version 2 files and common field types - (should be relatively easy to overload)
 - supports includes but cannot resolve enums and messages with the same name
+- doesnt resolve symbol dependancy order - ie forward declares / reordering of declarations 
 - ignores namespace/package attributes
 - tokenizer is confused by comment looking string literals aka - file paths // and /*
-- doesn't generate make files etc
+- doesn't generate make files or wrapper classes etc
 
 ## Supported tags
 

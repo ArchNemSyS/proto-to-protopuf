@@ -109,7 +109,7 @@ void Parser::rewrite_enum()
         enum TYPE {
             FIELD_NAME = INT,
             FIELD_NAME = INT,
-        }
+        };
     */
 
 
@@ -168,6 +168,67 @@ void Parser::rewrite_enum()
 
 }
 
+void Parser::close_message_field(std::string comma, bool repeated)
+{
+    // repeated ?
+    if(repeated)
+    {
+        m_output.append( ", repeated" );
+    }
+
+    // | 5 | close field
+    m_output.append( ">" );
+    m_output.append(comma);
+
+    // | >5 |  comment remaining tokens
+
+    m_output.append(" //");
+    while(*it != "\n")
+    {
+        m_output.append( *it );
+        std::advance(it,1);
+    }
+    m_output.append("\n");
+}
+
+void Parser::rewrite_typed_field(std::string_view fieldtemplate)
+{
+    /*
+     * optional ProtoPayloadType payloadType = 1 [default = ERROR_RES];
+     *
+     * -- convert to
+     *
+     * enum_field<"payloadType", 1, ProtoPayloadType>
+     */
+
+
+    // | 1 |
+    auto fieldtype = it;    //feildtype
+    std::advance(it,1);
+
+    // | 2 |
+    auto feildname = it;    //feildname
+    std::advance(it,1);
+
+    // | 3 |
+    assert(*it == "=");
+    //m_output.append( " = " );
+    std::advance(it,1);
+
+    // | 4 |
+    auto feildordinal = it; //ordinal
+    std::advance(it,1);
+
+
+
+    m_output.append( fieldtemplate );
+    m_output.append( "<\"" );
+    m_output.append( *feildname );
+    m_output.append( "\", " );
+    m_output.append( *feildordinal );
+    m_output.append( ", " );
+    m_output.append( *fieldtype );
+}
 
 void Parser::rewrite_message_field(std::string comma)
 {
@@ -260,42 +321,47 @@ for (int i = 0; i < lookup_types.size(); i++)
     if( known_type != protopuf_types.end() )
     {
         // is proto_puf type
+        // | 1 |
         m_output.append( known_type->second );
+        std::advance(it,1);
+
+        // | 2 |
+        m_output.append( "<\"" );
+        m_output.append( *it );
+        m_output.append( "\", " );
+        std::advance(it,1);
+
+        // | 3 |
+        assert(*it == "=");
+        //m_output.append( " = " );
+        std::advance(it,1);
+
+        // | 4 |
+        m_output.append( *it );
+        std::advance(it,1);
 
     }
     else if( std::find(m_enums.begin(), m_enums.end(), *it) != m_enums.end() )
     {
-        // is enum_field ?
-        m_output.append( "enum_field" );
+        // is enum_field ?      
+        rewrite_typed_field("enum_field");
     }
     else if( std::find(m_messages.begin(), m_messages.end(), *it) != m_messages.end() )
     {
         // is message_field ?
-        m_output.append( "message_field" );
+        rewrite_typed_field("message_field");
     }
     else
     {
         assert(false && "unknown feild type");
     }
-    std::advance(it,1);
-
-    // | 2 |
-    m_output.append( "<\"" );
-    m_output.append( *it );
-    m_output.append( "\", " );
-    std::advance(it,1);
-
-    // | 3 |
-    assert(*it == "=");
-    //m_output.append( " = " );
-    std::advance(it,1);
-
-    // | 4 |
-    m_output.append( *it );
-    std::advance(it,1);
 
 
 
+
+    close_message_field(comma, repeated);
+
+    /*
     // repeated ?
     if(repeated)
     {
@@ -315,7 +381,7 @@ for (int i = 0; i < lookup_types.size(); i++)
         std::advance(it,1);
     }
     m_output.append("\n");
-
+    */
 
 }
 
