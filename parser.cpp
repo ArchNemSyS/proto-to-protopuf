@@ -71,20 +71,22 @@ void Parser::forward_symbol()
     if(*it == "enum")
     {
         std::advance(it,1);
-
-        // string copy
-        //m_enums.push_back(std::string(*it).c_str());
-
         m_enums.push_back(*it);
+
+        // write forward declaration
+        //m_output.append("enum ");
+        //m_output.append(*it);
+        //m_output.append(";\n");
     }
     else // "message"
     {
         std::advance(it,1);
-
-        // string copy
-        //m_messages.push_back(std::string(*it).c_str());
-
         m_messages.push_back(*it);
+
+        // write forward declaration
+        //m_output.append("message ");
+        //m_output.append(*it);
+        //m_output.append(";\n");
     }
 
     //skip to end of block
@@ -598,16 +600,13 @@ bool Parser::tokenize()
 
 bool Parser::parse(std::string source)
 {
-    //m_output.clear();
     m_output.reserve(source.size());
     m_source = std::move(source);
 
-    //m_enums.clear();
-    //m_messages.clear();
-    //m_tokens.clear();
 
     if(tokenize())
     {
+        //m_output.append("//Forward type declarations\n");
         // forward enum and message type declarions -- pull to top
         for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
 
@@ -616,6 +615,7 @@ bool Parser::parse(std::string source)
                 forward_symbol();
             }
         }
+        //m_output.append("\n");
 
         for (it = m_tokens.begin(); it != m_tokens.end(); ++it) {
 
@@ -722,6 +722,10 @@ void Parser::writeParsedFiles(std::string path)
             // write header guard
             fileout << "#ifndef " << upper << '\n'
                     << "#define " << upper << "\n\n";
+
+            // write protopuf include and namespace
+            fileout << "#include \"protopuf/message.h\"" << "\n\n";
+            fileout << "using namespace pp;" << "\n\n";
 
             fileout << file.parser->m_output;
 
