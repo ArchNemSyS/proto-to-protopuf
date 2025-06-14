@@ -11,7 +11,7 @@ A simple parser for Google proto source files to [protopuf](https://github.com/P
 ## Run
 - copy proto_parser executable and .proto files to an empty directory
 - run ./proto_parser
-- with any luck the parsed c++ protopuf heads will be in the protopuf subdirectory 
+- with any luck the parsed c++ protopuf headers will be in the protopuf subdirectory 
 
 
 ## Limitations
