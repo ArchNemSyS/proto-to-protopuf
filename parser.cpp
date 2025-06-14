@@ -537,7 +537,7 @@ bool Parser::tokenize()
 {
     //will get fooled by weird filespaths literals that look like comments
 
-    constexpr std::string_view delims(";/\n ");
+    constexpr std::string_view delims(";/\n\t ");
 
     // char* m_source.data
 
